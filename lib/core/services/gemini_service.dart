@@ -45,80 +45,111 @@ class GeminiService {
     Logger.info('Gemini AI service initialized');
   }
 
-  /// Send text message to Gemini
+  /// Send text message to Gemini with retry logic
   Future<String> sendMessage(String message) async {
-    try {
-      Logger.info('Sending message to Gemini: ${message.substring(0, 50)}...');
-
-      final prompt = _buildPrompt(message);
-      final content = [Content.text(prompt)];
-      final response = await _model.generateContent(content);
-
-      final responseText = response.text ?? 'দুঃখিত, আমি উত্তর দিতে পারছি না।';
-      Logger.info('Received response from Gemini');
-
-      return responseText;
-    } catch (e) {
-      Logger.error('Error sending message to Gemini', error: e);
-      return 'দুঃখিত, একটি ত্রুটি হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।';
-    }
+    return _sendWithRetry(() => _sendMessageInternal(message));
   }
 
-  /// Send message with image to Gemini
+  /// Internal method to send text message
+  Future<String> _sendMessageInternal(String message) async {
+    Logger.info('Sending message to Gemini: ${message.substring(0, message.length > 50 ? 50 : message.length)}...');
+
+    final prompt = _buildPrompt(message);
+    final content = [Content.text(prompt)];
+    final response = await _model.generateContent(content);
+
+    final responseText = response.text ?? 'দুঃখিত, আমি উত্তর দিতে পারছি না।';
+    Logger.info('Received response from Gemini');
+
+    return responseText;
+  }
+
+  /// Retry logic with exponential backoff for rate limiting
+  Future<String> _sendWithRetry(Future<String> Function() operation, {int maxRetries = 3}) async {
+    for (int attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (e) {
+        final errorMessage = e.toString().toLowerCase();
+        final isRateLimitError = errorMessage.contains('429') || 
+                                 errorMessage.contains('quota') || 
+                                 errorMessage.contains('rate limit');
+        
+        if (isRateLimitError && attempt < maxRetries - 1) {
+          // Exponential backoff: 2^attempt seconds
+          final delaySeconds = (1 << attempt); // 1, 2, 4 seconds
+          Logger.warning('Rate limit hit, retrying in $delaySeconds seconds (attempt ${attempt + 1}/$maxRetries)');
+          await Future.delayed(Duration(seconds: delaySeconds));
+          continue;
+        }
+        
+        Logger.error('Error sending message to Gemini', error: e);
+        
+        if (isRateLimitError) {
+          return 'দুঃখিত, অনেক বেশি অনুরোধ হয়েছে। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।';
+        }
+        
+        return 'দুঃখিত, একটি ত্রুটি হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।';
+      }
+    }
+    return 'দুঃখিত, একটি ত্রুটি হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।';
+  }
+
+  /// Send message with image to Gemini with retry logic
   Future<String> sendMessageWithImage({
     required String message,
     required File imageFile,
   }) async {
-    try {
-      Logger.info('Sending message with image to Gemini');
-
-      final imageBytes = await imageFile.readAsBytes();
-      final prompt = _buildPromptWithImage(message);
-
-      final content = [
-        Content.multi([
-          TextPart(prompt),
-          DataPart('image/jpeg', imageBytes),
-        ])
-      ];
-
-      final response = await _visionModel.generateContent(content);
-      final responseText = response.text ?? 'দুঃখিত, আমি ছবি বিশ্লেষণ করতে পারছি না।';
-
-      Logger.info('Received response with image from Gemini');
-      return responseText;
-    } catch (e) {
-      Logger.error('Error sending message with image to Gemini', error: e);
-      return 'দুঃখিত, ছবি বিশ্লেষণে ত্রুটি হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।';
-    }
+    return _sendWithRetry(() => _sendMessageWithImageInternal(message, imageFile));
   }
 
-  /// Send message with image bytes to Gemini
+  /// Internal method to send message with image
+  Future<String> _sendMessageWithImageInternal(String message, File imageFile) async {
+    Logger.info('Sending message with image to Gemini');
+
+    final imageBytes = await imageFile.readAsBytes();
+    final prompt = _buildPromptWithImage(message);
+
+    final content = [
+      Content.multi([
+        TextPart(prompt),
+        DataPart('image/jpeg', imageBytes),
+      ])
+    ];
+
+    final response = await _visionModel.generateContent(content);
+    final responseText = response.text ?? 'দুঃখিত, আমি ছবি বিশ্লেষণ করতে পারছি না।';
+
+    Logger.info('Received response with image from Gemini');
+    return responseText;
+  }
+
+  /// Send message with image bytes to Gemini with retry logic
   Future<String> sendMessageWithImageBytes({
     required String message,
     required Uint8List imageBytes,
   }) async {
-    try {
-      Logger.info('Sending message with image bytes to Gemini');
+    return _sendWithRetry(() => _sendMessageWithImageBytesInternal(message, imageBytes));
+  }
 
-      final prompt = _buildPromptWithImage(message);
+  /// Internal method to send message with image bytes
+  Future<String> _sendMessageWithImageBytesInternal(String message, Uint8List imageBytes) async {
+    Logger.info('Sending message with image bytes to Gemini');
 
-      final content = [
-        Content.multi([
-          TextPart(prompt),
-          DataPart('image/jpeg', imageBytes),
-        ])
-      ];
+    final prompt = _buildPromptWithImage(message);
 
-      final response = await _visionModel.generateContent(content);
-      final responseText = response.text ?? 'দুঃখিত, আমি ছবি বিশ্লেষণ করতে পারছি না।';
+    final content = [
+      Content.multi([
+        TextPart(prompt),
+        DataPart('image/jpeg', imageBytes),
+      ])
+    ];
 
-      Logger.info('Received response with image bytes from Gemini');
-      return responseText;
-    } catch (e) {
-      Logger.error('Error sending message with image bytes to Gemini', error: e);
-      return 'দুঃখিত, ছবি বিশ্লেষণে ত্রুটি হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।';
-    }
+    final response = await _visionModel.generateContent(content);
+    final responseText = response.text ?? 'দুঃখিত, আমি ছবি বিশ্লেষণ করতে পারছি না।';
+
+    Logger.info('Received response with image bytes from Gemini');
+    return responseText;
   }
 
   /// Build Bengali prompt for agriculture context
