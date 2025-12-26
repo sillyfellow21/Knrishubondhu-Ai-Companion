@@ -21,6 +21,13 @@ class NavigationMenuItem extends Equatable {
 
 /// Navigation Menu Items
 class NavigationMenuItems {
+  static const home = NavigationMenuItem(
+    id: 'home',
+    title: 'হোম',
+    icon: Icons.home_outlined,
+    route: '/',
+  );
+
   static const profile = NavigationMenuItem(
     id: 'profile',
     title: 'প্রোফাইল',
@@ -71,6 +78,7 @@ class NavigationMenuItems {
   );
 
   static const List<NavigationMenuItem> allItems = [
+    home,
     profile,
     chatbot,
     weather,

@@ -39,10 +39,11 @@ class ProfileSetupViewModel extends StateNotifier<ProfileSetupState> {
 
       return result.fold(
         (failure) {
-          Logger.error('Save profile failed', error: failure.message);
+          final errorMsg = 'প্রোফাইল সংরক্ষণ ব্যর্থ: ${failure.message}';
+          Logger.error('Save profile failed', error: errorMsg);
           state = state.copyWith(
             isLoading: false,
-            errorMessage: failure.message,
+            errorMessage: errorMsg,
             isSaved: false,
           );
           return false;

@@ -33,33 +33,44 @@ class ProfileRepositoryImpl implements ProfileRepository {
       final now = DateTime.now();
       final profileId = uuid.v4();
 
-      final profileData = {
-        'id': profileId,
-        'user_id': userId,
-        'full_name': fullName,
-        'area': area,
-        'land_amount': landAmount,
-        'created_at': now.toIso8601String(),
-        'updated_at': now.toIso8601String(),
-      };
-
-      // Save to Supabase
-      final response = await supabaseService.insert(
-        table: 'profiles',
-        data: profileData,
+      final profile = UserProfileModel(
+        id: profileId,
+        userId: userId,
+        fullName: fullName,
+        area: area,
+        landAmount: landAmount,
+        createdAt: now,
+        updatedAt: now,
       );
 
-      if (response.isEmpty) {
-        return const Left(ServerFailure('প্রোফাইল সংরক্ষণ ব্যর্থ হয়েছে'));
+      // Save to local database first (always works)
+      final db = await databaseService.database;
+      await db.insert(
+        'user_profiles',
+        profile.toDatabase(),
+      );
+
+      Logger.info('Profile saved to local database');
+
+      // Try to sync to Supabase (non-blocking)
+      try {
+        final supabaseData = {
+          'user_id': userId,
+          'full_name': fullName,
+          'area': area,
+          'land_amount': landAmount,
+        };
+
+        await supabaseService.insert(
+          table: 'profiles',
+          data: supabaseData,
+        );
+        
+        Logger.info('Profile synced to Supabase');
+      } catch (supabaseError) {
+        // Log error but don't fail the operation
+        Logger.warning('Supabase sync failed (profile saved locally): $supabaseError');
       }
-
-      final profile = UserProfileModel.fromJson(response.first);
-
-      // Save to local database
-      await databaseService.insert(
-        table: 'user_profiles',
-        data: profile.toDatabase(),
-      );
 
       Logger.info('Profile saved successfully for user: $userId');
       return Right(profile);
@@ -68,7 +79,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       return Left(DatabaseFailure(e.message));
     } catch (e) {
       Logger.error('Unexpected error during save profile', error: e);
-      return const Left(ServerFailure('কিছু ভুল হয়েছে। আবার চেষ্টা করুন।'));
+      return Left(ServerFailure('প্রোফাইল সংরক্ষণ ব্যর্থ হয়েছে: ${e.toString()}'));
     }
   }
 

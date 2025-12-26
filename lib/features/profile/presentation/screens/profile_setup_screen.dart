@@ -226,7 +226,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                   onPressed: profileState.isLoading
                       ? null
                       : () {
-                          context.go('/chatbot');
+                          context.go('/');
                         },
                   child: Text(
                     'পরে করবো',
