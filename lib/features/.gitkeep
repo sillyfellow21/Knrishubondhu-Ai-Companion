@@ -1,0 +1,5 @@
+# Features folder
+# Each feature will have its own folder with the following structure:
+# - data (repositories, data sources, models)
+# - domain (entities, repositories interfaces, use cases)
+# - presentation (screens, widgets, providers)
