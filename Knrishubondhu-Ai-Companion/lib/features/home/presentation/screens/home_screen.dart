@@ -10,112 +10,140 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
-    return MainLayout(
-      title: 'হোম',
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Welcome Card
-            Card(
-              elevation: 2,
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.primaryColor,
-                      theme.primaryColor.withAlpha((0.7 * 255).toInt()),
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+        // Show dialog to confirm exit
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('অ্যাপ বন্ধ করবেন?'),
+            content: const Text('আপনি কি অ্যাপ থেকে প্রস্থান করতে চান?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('না'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('হ্যাঁ'),
+              ),
+            ],
+          ),
+        );
+        if (shouldExit == true && context.mounted) {
+          // Exit app
+          Navigator.of(context).pop();
+        }
+      },
+      child: MainLayout(
+        title: 'হোম',
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Welcome Card
+              Card(
+                elevation: 2,
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.primaryColor,
+                        theme.primaryColor.withAlpha((0.7 * 255).toInt()),
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'স্বাগতম কৃষিবন্ধু AI তে',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'আপনার কৃষি সহায়ক',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: Colors.white70,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'স্বাগতম কৃষিবন্ধু AI তে',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'আপনার কৃষি সহায়ক',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
+              ),
+              const SizedBox(height: 24),
+
+              // Features Grid
+              Text(
+                'ফিচার সমূহ',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            
-            // Features Grid
-            Text(
-              'ফিচার সমূহ',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
+              const SizedBox(height: 16),
+
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 1.1,
+                children: [
+                  _FeatureCard(
+                    icon: Icons.chat_bubble_outline,
+                    title: 'AI চ্যাটবট',
+                    subtitle: 'কৃষি পরামর্শ',
+                    color: Colors.blue,
+                    onTap: () => context.push('/chatbot'),
+                  ),
+                  _FeatureCard(
+                    icon: Icons.cloud_outlined,
+                    title: 'আবহাওয়া',
+                    subtitle: 'পূর্বাভাস',
+                    color: Colors.orange,
+                    onTap: () => context.push('/weather'),
+                  ),
+                  _FeatureCard(
+                    icon: Icons.landscape_outlined,
+                    title: 'জমির তথ্য',
+                    subtitle: 'ব্যবস্থাপনা',
+                    color: Colors.green,
+                    onTap: () => context.push('/lands'),
+                  ),
+                  _FeatureCard(
+                    icon: Icons.calendar_month_outlined,
+                    title: 'ফসল ক্যালেন্ডার',
+                    subtitle: 'সময়সূচী',
+                    color: Colors.teal,
+                    onTap: () => context.push('/crop-calendar'),
+                  ),
+                  _FeatureCard(
+                    icon: Icons.account_balance_wallet_outlined,
+                    title: 'ঋণ ট্র্যাকার',
+                    subtitle: 'হিসাব রাখুন',
+                    color: Colors.purple,
+                    onTap: () => context.push('/loans'),
+                  ),
+                  _FeatureCard(
+                    icon: Icons.forum_outlined,
+                    title: 'কৃষক ফোরাম',
+                    subtitle: 'সম্প্রদায়',
+                    color: Colors.indigo,
+                    onTap: () => context.push('/forum'),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 1.1,
-              children: [
-                _FeatureCard(
-                  icon: Icons.chat_bubble_outline,
-                  title: 'AI চ্যাটবট',
-                  subtitle: 'কৃষি পরামর্শ',
-                  color: Colors.blue,
-                  onTap: () => context.go('/chatbot'),
-                ),
-                _FeatureCard(
-                  icon: Icons.cloud_outlined,
-                  title: 'আবহাওয়া',
-                  subtitle: 'পূর্বাভাস',
-                  color: Colors.orange,
-                  onTap: () => context.go('/weather'),
-                ),
-                _FeatureCard(
-                  icon: Icons.landscape_outlined,
-                  title: 'জমির তথ্য',
-                  subtitle: 'ব্যবস্থাপনা',
-                  color: Colors.green,
-                  onTap: () => context.go('/lands'),
-                ),
-                _FeatureCard(
-                  icon: Icons.calendar_month_outlined,
-                  title: 'ফসল ক্যালেন্ডার',
-                  subtitle: 'সময়সূচী',
-                  color: Colors.teal,
-                  onTap: () => context.go('/crop-calendar'),
-                ),
-                _FeatureCard(
-                  icon: Icons.account_balance_wallet_outlined,
-                  title: 'ঋণ ট্র্যাকার',
-                  subtitle: 'হিসাব রাখুন',
-                  color: Colors.purple,
-                  onTap: () => context.go('/loans'),
-                ),
-                _FeatureCard(
-                  icon: Icons.forum_outlined,
-                  title: 'কৃষক ফোরাম',
-                  subtitle: 'সম্প্রদায়',
-                  color: Colors.indigo,
-                  onTap: () => context.go('/forum'),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

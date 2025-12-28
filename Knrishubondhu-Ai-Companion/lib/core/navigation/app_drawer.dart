@@ -100,7 +100,12 @@ class AppDrawer extends ConsumerWidget {
                           Navigator.of(context).pop();
 
                           // Navigate to route
-                          context.go(item.route);
+                          // Use go for home, push for others to maintain stack
+                          if (item.route == '/') {
+                            context.go(item.route);
+                          } else {
+                            context.push(item.route);
+                          }
                         },
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
