@@ -9,6 +9,8 @@ An AI-powered agricultural assistant mobile application built with Flutter.
 - 🔐 Secure authentication with Supabase
 - 💾 Local storage with SQLite
 - 🎨 Modern, rounded UI design
+- 🔙 Intuitive back button navigation with stack management
+- ⚡ Smooth user experience with proper navigation flow
 
 ## Tech Stack
 
@@ -17,7 +19,7 @@ An AI-powered agricultural assistant mobile application built with Flutter.
 - **Architecture**: Clean Architecture
 - **Backend**: Supabase (Auth + Database)
 - **Local Storage**: SQLite (sqflite)
-- **Navigation**: Go Router
+- **Navigation**: Go Router with PopScope for back button handling
 - **UI**: Google Fonts, Material 3
 
 ## Project Structure
