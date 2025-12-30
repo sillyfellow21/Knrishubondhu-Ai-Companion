@@ -38,9 +38,9 @@ I've secured your repository by:
 
 3. **Push to GitHub**:
    ```cmd
-   git push origin main
+   push.bat
    ```
-   (Replace `main` with `master` if that's your default branch)
+   (This auto-detects your branch and pushes correctly)
 
 ### Option B: Manual Commands
 
@@ -60,8 +60,8 @@ git add .
 # 4. Commit
 git commit -m "Initial commit - KrishiBondhu AI without sensitive data"
 
-# 5. Push to remote
-git push origin main
+# 5. Push to remote (use your actual branch: master or main)
+git push origin master
 ```
 
 ## 🔒 Your API Keys Are Safe

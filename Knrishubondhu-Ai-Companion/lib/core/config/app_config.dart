@@ -1,11 +1,10 @@
 class AppConfig {
   // Supabase Configuration
-  static const String supabaseUrl = 'https://anozsiaikrftgxhsgooo.supabase.co';
-  static const String supabaseAnonKey ='sb_publishable_4-35Y2vQGQexCP1_CwKd_g_RSIJJB5V'
-      '';
+  static const String supabaseUrl = 'YOUR_SUPABASE_URL_HERE';
+  static const String supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY_HERE';
 
   // Gemini Configuration
-  static const String geminiApiKey = 'AIzaSyCuFSL0bFvUDLZKaeXV21nvVtyAbCempV8';
+  static const String geminiApiKey = 'YOUR_GEMINI_API_KEY_HERE';
 
   // App Configuration
   static const String appName = 'KrishiBondhu AI';
@@ -18,5 +17,5 @@ class AppConfig {
 
   // Computed properties
   static bool get isGeminiConfigured =>
-      geminiApiKey.isNotEmpty && geminiApiKey != 'YOUR_GEMINI_API_KEY';
+      geminiApiKey.isNotEmpty && geminiApiKey != 'YOUR_GEMINI_API_KEY_HERE';
 }
