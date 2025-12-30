@@ -49,7 +49,7 @@ class GeminiService {
 
     // Use gemini-1.5-flash for both text and vision (multimodal)
     _model = GenerativeModel(
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       apiKey: AppConfig.geminiApiKey,
       systemInstruction: Content.text(_systemInstruction),
       generationConfig: GenerationConfig(

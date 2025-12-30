@@ -6,7 +6,7 @@ import '../utils/logger.dart';
 /// Weather Service for OpenWeatherMap API integration
 class WeatherService {
   // TODO: Add your OpenWeatherMap API key here
-  static const String apiKey = '308aedbb51fee91d2330a8ec0823b77b';
+  static const String apiKey = 'YOUR_OPENWEATHERMAP_API_KEY_HERE';
   static const String _baseUrl = 'https://api.openweathermap.org/data/2.5';
 
   /// Get current weather data from OpenWeatherMap

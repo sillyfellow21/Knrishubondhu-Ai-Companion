@@ -18,7 +18,7 @@ class AppTheme {
       scaffoldBackgroundColor: backgroundColor,
       
       // Text Theme
-      textTheme: GoogleFonts.interTextTheme(),
+      textTheme: GoogleFonts.notoSansBengaliTextTheme(),
       
       // App Bar Theme
       appBarTheme: AppBarTheme(
@@ -26,7 +26,7 @@ class AppTheme {
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.black87),
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: GoogleFonts.notoSansBengali(
           color: Colors.black87,
           fontSize: 18,
           fontWeight: FontWeight.w600,
@@ -81,7 +81,7 @@ class AppTheme {
             horizontal: 24,
             vertical: 16,
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: GoogleFonts.notoSansBengali(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
