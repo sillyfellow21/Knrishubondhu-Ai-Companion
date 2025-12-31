@@ -20,10 +20,24 @@ By the end of this development phase, the following features have been successfu
 - ✅ Protected routes requiring authentication
 
 ### 2. **AI Chatbot Assistant**
-- ✅ Gemini AI integration for agricultural queries
+- ✅ **Perenual Plant API Integration** (PRIMARY source)
+  - 10,000+ plant species database
+  - Real plant data (watering, sunlight, care)
+  - Bengali to English plant name translation
+  - Comprehensive 7-step cultivation guides
+- ✅ Gemini AI integration (OPTIONAL fallback)
 - ✅ Text-based conversation in Bengali language
-- ✅ Image analysis for crop disease detection
+- ✅ Image analysis for crop disease detection (when Gemini enabled)
 - ✅ Context-aware responses specific to Bangladeshi agriculture
+- ✅ Detailed cultivation instructions:
+  - Soil preparation (pH levels, organic matter)
+  - Planting guidelines (spacing, depth)
+  - Watering schedules (frequency, timing)
+  - Sunlight requirements (hours/day)
+  - Fertilizer application (NPK, organic, timing)
+  - Pest control methods (organic & chemical)
+  - Harvesting tips (timing, techniques)
+- ✅ Special care instructions for common crops (tomato, rice, corn)
 - ✅ Chat history storage (local + cloud sync)
 
 ### 3. **Weather Dashboard**
@@ -100,8 +114,10 @@ By the end of this development phase, the following features have been successfu
 - **Architecture:** Clean Architecture (Domain-Driven Design)
 - **Backend:** Supabase (PostgreSQL + Auth + Storage)
 - **Local Storage:** SQLite (sqflite)
-- **AI Integration:** Google Gemini AI (gemini-pro, gemini-pro-vision)
-- **Weather API:** Open-Meteo API
+- **AI Integration:** 
+  - **Primary:** Perenual Plant API (10,000+ plant database)
+  - **Fallback:** Google Gemini AI (gemini-1.5-flash) - Currently disabled
+- **Weather API:** OpenWeatherMap API
 - **Navigation:** Go Router
 - **Charts:** FL Chart
 - **Image Handling:** Cached Network Image
@@ -210,7 +226,8 @@ lib/
   - Firebase/Supabase Authentication Tutorial
 
 #### API Documentation:
-- **Open-Meteo API:** https://open-meteo.com/en/docs
+- **Perenual Plant API:** https://perenual.com/docs/api
+- **OpenWeatherMap API:** https://openweathermap.org/api
 - **Supabase REST API:** https://supabase.com/docs/guides/api
 - **Gemini API Reference:** https://ai.google.dev/api
 
@@ -231,19 +248,31 @@ lib/
    - Data synchronization strategy
    - Conflict resolution
 
-4. **Gemini AI Integration:**
-   - https://github.com/google/generative-ai-dart
-   - Image to text analysis
-   - Bengali language responses
+4. **Perenual Plant Database Integration:**
+   - https://perenual.com/docs/api
+   - Plant search and identification
+   - Care guide integration
+   - Bengali plant name translation mapping
 
-5. **Go Router + Riverpod:**
-   - https://stackoverflow.com/questions/go-router-riverpod
-   - Protected routes implementation
+5. **OpenWeatherMap API:**
+   - https://openweathermap.org/api/one-call-3
+   - Real-time weather data
+   - Location-based forecasting
 
 6. **FL Chart Implementation:**
    - https://github.com/imaNNeo/fl_chart/tree/main/example
    - Bar chart customization
    - Bengali label rendering
+
+7. **Gemini AI Integration:**
+   - https://github.com/google/generative-ai-dart
+   - Image to text analysis
+   - Bengali language responses
+   - Currently disabled (Perenual primary)
+
+8. **Go Router + Riverpod:**
+   - https://stackoverflow.com/questions/go-router-riverpod
+   - Protected routes implementation
 
 #### GitHub Repositories Referenced:
 - **Flutter Samples:** https://github.com/flutter/samples
@@ -402,6 +431,9 @@ The following enhancements can be added to the current system to improve functio
   - Community Forum ✅
   - Offline Support ✅
   - Reporting (Charts) ✅
+  - Perenual Plant Database Integration ✅
+  - OpenWeatherMap API Integration ✅
+  - API Security & Management ✅
 
 - **Phase 3 (Planned):** Advanced Features
   - Marketplace Integration
@@ -431,10 +463,14 @@ The following enhancements can be added to the current system to improve functio
 ### 4. **Challenge:** API Rate Limiting
 **Solution:** Implemented caching strategies for weather data and chat history to reduce API calls.
 
-### 5. **Challenge:** Image Analysis Performance
-**Solution:** Implemented image compression before sending to Gemini AI and added loading indicators for better UX.
-
-### 6. **Challenge:** Back Button Navigation
+### 6. **Challenge:** AI Response Quality & Accuracy
+**Solution:** Switched from AI-generated responses to Perenual Plant Database as primary source for plant-related queries. This provides:
+- Verified, accurate plant data from a professional database
+- Structured information (watering, sunlight, lifecycle)
+- No AI hallucinations or incorrect advice
+- Enhanced with expert cultivation steps
+- Bengali plant name translation (30+ common crops)
+- Gemini AI kept as optional fallback for complex queries
 **Solution:** Implemented PopScope widget on home screen with exit confirmation dialog, switched from context.go() to context.push() to maintain navigation stack, and added automatic back button detection in MainLayout for proper navigation flow.
 
 ---
@@ -452,13 +488,17 @@ With the planned future enhancements, KrishiBondhu AI has the potential to becom
 ## Project Statistics
 
 - **Total Screens:** 10+
-- **Lines of Code:** 10,000+ (estimated)
-- **Dependencies:** 25+ packages
+- **Lines of Code:** 12,000+ (estimated)
+- **Dependencies:** 27+ packages
 - **Supported Language:** Bengali (বাংলা)
 - **Target Platform:** Android (iOS ready)
 - **Architecture:** Clean Architecture + SOLID Principles
 - **Database Tables:** 7 (SQLite) + 4 (Supabase)
-- **API Integrations:** 3 (Gemini AI, Supabase, Open-Meteo)
+- **API Integrations:** 4 (Perenual, Gemini AI, Supabase, OpenWeatherMap)
+- **Plant Database:** 10,000+ species (Perenual)
+- **Translation Dictionary:** 30+ Bengali crop names
+- **Cultivation Steps:** 7-step detailed guides per plant
+- **Special Care Instructions:** 3+ major crops (tomato, rice, corn)
 
 ---
 
@@ -472,6 +512,30 @@ With the planned future enhancements, KrishiBondhu AI has the potential to becom
 
 ---
 
-**Version:** 1.0.1+2  
+**Version:** 1.0.2+3  
 **Status:** ✅ Production Ready  
-**Last Updated:** December 28, 2025
+**Last Updated:** December 31, 2025
+
+## Recent Updates (v1.0.2)
+
+### AI Chatbot Improvements:
+- ✅ Integrated Perenual Plant API as primary data source
+- ✅ Added 30+ Bengali to English plant name translations
+- ✅ Implemented 7-step detailed cultivation guides
+- ✅ Added special care instructions for major crops
+- ✅ Improved response accuracy with database-backed information
+- ✅ Made Gemini AI optional (can be enabled/disabled)
+- ✅ Enhanced error handling with helpful messages
+
+### API Management:
+- ✅ Updated weather service to use OpenWeatherMap API
+- ✅ Created API key security system with .gitignore
+- ✅ Added template configuration files
+- ✅ Created comprehensive API setup documentation
+- ✅ Implemented API key validation checks
+
+### Documentation:
+- ✅ Created `API_SETUP_GUIDE.md` - API configuration guide
+- ✅ Created `PERENUAL_API_GUIDE.md` - Perenual integration guide
+- ✅ Created `AI_SERVICE_CONFIG.md` - Service configuration
+- ✅ Updated `PROJECT_REPORT.md` - Complete project overview
