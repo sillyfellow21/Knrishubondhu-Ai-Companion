@@ -78,10 +78,16 @@ The project follows **Clean Architecture** principles with clear separation of c
   - Row Level Security (RLS)
 
 ### AI & APIs
-- **Google Gemini AI**: 
-  - Text generation (gemini-pro)
-  - Vision analysis (gemini-pro-vision)
-- **Open-Meteo API**: Weather data
+- **Perenual Plant API** (PRIMARY): 
+  - 10,000+ plant species database
+  - Verified agricultural data
+  - Plant care guides and requirements
+  - Free tier: 300 requests/day
+- **Google Gemini AI** (OPTIONAL FALLBACK - Currently Disabled): 
+  - Text generation (gemini-1.5-flash)
+  - Vision analysis for crop disease detection
+  - Bengali language support
+- **OpenWeatherMap API**: Real-time weather data and forecasts
 
 ### Local Storage
 - **SQLite (sqflite)**: Local database for offline support
@@ -248,52 +254,108 @@ ChatScreen → ChatViewModel → SendMessageUseCase → ChatRepository → Gemin
 - **Repository**: `lib/features/chat/data/repositories/chat_repository_impl.dart`
 - **Provider**: `lib/features/chat/presentation/providers/chat_providers.dart`
 
-#### Features
-- **Text-based chat**: Uses `gemini-pro` model
-- **Image analysis**: Uses `gemini-pro-vision` for crop disease detection
-- **Context-aware**: Bengali language prompts for agricultural advice
-- **Chat history**: Persisted in SQLite and synced to Supabase
+### 2. **AI Chatbot**
 
-#### Implementation
+#### Architecture (Updated v1.0.2)
+```
+ChatScreen → ChatViewModel → SendMessageUseCase → ChatRepository → PerenualService (PRIMARY)
+                                                                  ↓
+                                                             GeminiService (FALLBACK)
+                                                                  ↓
+                                                            DatabaseService (Chat History)
+```
+
+#### AI Service Priority Flow
+1. **Detect plant-related query** using keyword matching (30+ Bengali/English terms)
+2. **Translate Bengali → English** using built-in dictionary
+3. **Query Perenual API** for verified plant data
+4. **Generate 7-step cultivation guide**:
+   - Soil preparation (pH, organic matter)
+   - Planting guidelines (spacing, depth)
+   - Watering schedule (frequency)
+   - Sunlight requirements (hours/day)
+   - Fertilizer application (NPK ratios)
+   - Pest control methods
+   - Harvesting tips
+5. **Add special care** for specific crops (tomato, rice, corn)
+6. **Fallback to Gemini AI** if Perenual fails or for non-plant queries (currently disabled)
+
+#### Perenual Service Implementation
+```dart
+class PerenualService {
+  static const String _baseUrl = 'https://perenual.com/api';
+  
+  Future<List<Map<String, dynamic>>> searchPlants(String query) async {
+    final uri = Uri.parse('$_baseUrl/species-list').replace(
+      queryParameters: {
+        'key': AppConfig.perenualApiKey,
+        'q': query,
+      },
+    );
+    
+    final response = await http.get(uri);
+    final data = json.decode(response.body);
+    return List<Map<String, dynamic>>.from(data['data'] ?? []);
+  }
+}
+```
+
+#### Gemini Service Implementation (Optional Fallback)
 ```dart
 class GeminiService {
   late final GenerativeModel _model;
-  late final GenerativeModel _visionModel;
   
   void initialize() {
-    // Text model
+    if (!AppConfig.isGeminiConfigured) {
+      Logger.info('Gemini not configured, using Perenual only');
+      return;
+    }
+    
     _model = GenerativeModel(
-      model: 'gemini-pro',
+      model: 'gemini-1.5-flash',
       apiKey: AppConfig.geminiApiKey,
+      systemInstruction: Content.text(_farmingExpertPrompt),
       generationConfig: GenerationConfig(
         temperature: 0.7,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 2048,
       ),
-    );
-    
-    // Vision model
-    _visionModel = GenerativeModel(
-      model: 'gemini-pro-vision',
-      apiKey: AppConfig.geminiApiKey,
     );
   }
   
   Future<String> sendMessage(String message) async {
-    final prompt = _buildPrompt(message);
-    final content = [Content.text(prompt)];
-    final response = await _model.generateContent(content);
-    return response.text ?? 'No response';
-  }
-  
-  String _buildPrompt(String userMessage) {
-    return '''
-আপনি একজন বিশেষজ্ঞ কৃষি পরামর্শদাতা।
-সবসময় বাংলায় উত্তর দিন।
-কৃষকের প্রশ্ন: $userMessage
-উত্তর:''';
+    final response = await _chatSession!.sendMessage(
+      Content.text(message)
+    );
+    return response.text ?? 'দুঃখিত, উত্তর দিতে পারছি না।';
   }
 }
 ```
+
+#### Plant Name Translation
+```dart
+String _translatePlantName(String query) {
+  final translations = {
+    'টমেটো': 'tomato',
+    'ধান': 'rice',
+    'ভুট্টা': 'corn',
+    'আলু': 'potato',
+    // ... 30+ more crops
+  };
+  
+  for (var entry in translations.entries) {
+    if (query.toLowerCase().contains(entry.key)) {
+      return entry.value;
+    }
+  }
+  return query;
+}
+```
+
+#### Chat History Storage
+- **Text-based chat**: Uses Perenual Plant API (primary) or gemini-1.5-flash (fallback)
+- **Image analysis**: Uses gemini-1.5-flash with vision (when enabled)
+- **Context-aware**: Bengali language support with expert cultivation guides
+- **Chat history**: Persisted in SQLite and synced to Supabase
 
 ---
 
@@ -730,25 +792,97 @@ await supabase
   .eq('id', landId);
 ```
 
-### 2. Gemini AI API
+### 2. Perenual Plant API (v1.0.2+)
+
+**Primary Data Source for Plant Information**
 
 ```dart
-// Text generation
+class PerenualService {
+  static const String _baseUrl = 'https://perenual.com/api';
+  static const String apiKey = AppConfig.perenualApiKey;
+  
+  /// Search plants by name
+  Future<List<Map<String, dynamic>>> searchPlants(String query) async {
+    final uri = Uri.parse('$_baseUrl/species-list').replace(
+      queryParameters: {
+        'key': apiKey,
+        'q': query,
+        'page': '1',
+      },
+    );
+    
+    final response = await http.get(uri);
+    
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return List<Map<String, dynamic>>.from(data['data'] ?? []);
+    } else if (response.statusCode == 401) {
+      throw Exception('Invalid API key');
+    }
+    throw Exception('API error: ${response.statusCode}');
+  }
+  
+  /// Get plant details by ID
+  Future<Map<String, dynamic>> getPlantDetails(int plantId) async {
+    final uri = Uri.parse('$_baseUrl/species/details/$plantId').replace(
+      queryParameters: {'key': apiKey},
+    );
+    
+    final response = await http.get(uri);
+    return json.decode(response.body);
+  }
+  
+  /// Get plant care guide
+  Future<Map<String, dynamic>> getPlantCareGuide(int plantId) async {
+    final uri = Uri.parse('$_baseUrl/species-care-guide-list').replace(
+      queryParameters: {
+        'key': apiKey,
+        'species_id': plantId.toString(),
+      },
+    );
+    
+    final response = await http.get(uri);
+    return json.decode(response.body);
+  }
+}
+```
+
+**API Response Structure:**
+```json
+{
+  "data": [
+    {
+      "id": 123,
+      "common_name": "Tomato",
+      "scientific_name": "Solanum lycopersicum",
+      "watering": "Average",
+      "sunlight": ["Full sun"],
+      "cycle": "Annual",
+      "watering_period": "Weekly"
+    }
+  ]
+}
+```
+
+### 3. Gemini AI API (Optional Fallback)
+
+### 3. Gemini AI API (Optional Fallback)
+
+**Note:** Currently disabled in v1.0.2. Perenual is primary source.
+
+```dart
+// Text generation (when enabled)
 final model = GenerativeModel(
-  model: 'gemini-pro',
-  apiKey: apiKey,
+  model: 'gemini-1.5-flash',
+  apiKey: AppConfig.geminiApiKey,
+  systemInstruction: Content.text(farmingExpertPrompt),
 );
 
 final content = [Content.text(prompt)];
 final response = await model.generateContent(content);
 final text = response.text;
 
-// Image analysis
-final visionModel = GenerativeModel(
-  model: 'gemini-pro-vision',
-  apiKey: apiKey,
-);
-
+// Image analysis (when enabled)
 final imageBytes = await file.readAsBytes();
 final content = [
   Content.multi([
@@ -757,24 +891,70 @@ final content = [
   ])
 ];
 
-final response = await visionModel.generateContent(content);
+final response = await model.generateContent(content);
 ```
 
-### 3. Weather API (Open-Meteo)
+### 4. OpenWeatherMap API
+
+### 4. OpenWeatherMap API
 
 ```dart
-final uri = Uri.parse('https://api.open-meteo.com/v1/forecast').replace(
-  queryParameters: {
-    'latitude': '23.8103',
-    'longitude': '90.4125',
-    'current': 'temperature_2m,weather_code',
-    'daily': 'temperature_2m_max,temperature_2m_min',
-    'timezone': 'Asia/Dhaka',
-  },
-);
+class WeatherService {
+  static const String apiKey = 'YOUR_API_KEY';
+  static const String _baseUrl = 'https://api.openweathermap.org/data/2.5';
+  
+  Future<Map<String, dynamic>> getCurrentWeather({
+    required double latitude,
+    required double longitude,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/weather').replace(
+      queryParameters: {
+        'lat': latitude.toString(),
+        'lon': longitude.toString(),
+        'appid': apiKey,
+        'units': 'metric',
+      },
+    );
+    
+    final response = await http.get(uri);
+    return jsonDecode(response.body);
+  }
+  
+  Future<Map<String, dynamic>> get7DayForecast({
+    required double latitude,
+    required double longitude,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/forecast').replace(
+      queryParameters: {
+        'lat': latitude.toString(),
+        'lon': longitude.toString(),
+        'appid': apiKey,
+        'units': 'metric',
+        'cnt': '56', // 7 days * 8 (3-hour intervals)
+      },
+    );
+    
+    final response = await http.get(uri);
+    return jsonDecode(response.body);
+  }
+}
+```
 
-final response = await http.get(uri);
-final data = jsonDecode(response.body);
+**API Response Structure:**
+```json
+{
+  "main": {
+    "temp": 28.5,
+    "humidity": 65
+  },
+  "weather": [{
+    "description": "scattered clouds",
+    "icon": "02d"
+  }],
+  "wind": {
+    "speed": 3.5
+  }
+}
 ```
 
 ---
@@ -947,12 +1127,24 @@ class LandRepository {
    - Verify RLS policies are set correctly
    - Ensure user is authenticated
 
-2. **Gemini AI Not Responding**
+2. **Perenual API Issues** *(v1.0.2+)*
+   - Verify API key is valid (format: `sk-xxxx`)
+   - Free tier: 300 requests/day limit
+   - Check plant name spelling (use English names)
+   - Review Bengali translation dictionary
+
+3. **Gemini AI Not Responding** *(Optional Fallback)*
    - Verify API key is valid
+   - Check if Gemini is enabled in config
    - Check internet connection
    - Review rate limits
 
-3. **SQLite Errors**
+4. **OpenWeatherMap API Errors**
+   - Verify API key activation (can take 2 hours)
+   - Free tier: 1,000 calls/day
+   - Check location coordinates
+
+5. **SQLite Errors**
    - Clear app data
    - Check database version migrations
    - Verify foreign key constraints
@@ -964,10 +1156,31 @@ class LandRepository {
 - [Flutter Documentation](https://flutter.dev/docs)
 - [Riverpod Documentation](https://riverpod.dev)
 - [Supabase Documentation](https://supabase.com/docs)
+- [Perenual Plant API](https://perenual.com/docs/api) *(v1.0.2+)*
+- [OpenWeatherMap API](https://openweathermap.org/api)
 - [Gemini AI Documentation](https://ai.google.dev/docs)
 - [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 
 ---
 
-**Last Updated**: December 26, 2025
-**Version**: 1.0.0
+## 📝 Version History
+
+### v1.0.2+3 (December 31, 2025) - Current
+- ✅ Integrated Perenual Plant API as primary data source
+- ✅ Added 30+ Bengali to English plant translations
+- ✅ Implemented 7-step detailed cultivation guides
+- ✅ Made Gemini AI optional fallback (currently disabled)
+- ✅ Switched to OpenWeatherMap API
+- ✅ Enhanced API key security with .gitignore
+
+### v1.0.1 (December 28, 2025)
+- Initial production release
+- Core features: Auth, Chat, Weather, Lands, Loans
+- Clean Architecture implementation
+- Offline-first with SQLite + Supabase sync
+
+---
+
+**Last Updated**: December 31, 2025  
+**Version**: 1.0.2+3  
+**Status**: ✅ Production Ready
